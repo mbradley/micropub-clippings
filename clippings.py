@@ -288,6 +288,7 @@ def publish_to_microblog(filepath, target_date):
         "name": title,
         "content": body,
         "published": target_date.strftime("%Y-%m-%dT12:00:00"),
+        "category": "clippings",
     }
 
     print(f"Publishing to Micro.blog...")
