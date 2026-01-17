@@ -1,0 +1,4 @@
+#!/bin/bash
+# Wrapper to run clippings.py with the virtual environment
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+"$SCRIPT_DIR/.venv/bin/python" "$SCRIPT_DIR/clippings.py" "$@"
