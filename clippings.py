@@ -197,16 +197,33 @@ def format_bookmark(bookmark):
     return line
 
 
-def generate_frontmatter(target_date):
+def generate_frontmatter(target_date, micropub_url=None):
     """Generate YAML frontmatter for a clippings post."""
     date_str = target_date.strftime("%Y-%m-%d")
     title_date = target_date.strftime("%B %-d, %Y")
 
-    return f"""---
+    fm = f"""---
 title: "Clippings for {title_date}"
 date: {date_str}
-type: clippings
----"""
+type: clippings"""
+    if micropub_url:
+        fm += f"\nmicropub_url: {micropub_url}"
+    fm += "\n---"
+    return fm
+
+
+def save_micropub_url(filepath, url):
+    """Save the published Micropub URL to the post's frontmatter."""
+    content = filepath.read_text()
+
+    if "micropub_url:" in content:
+        # Update existing URL
+        content = re.sub(r'micropub_url:.*', f'micropub_url: {url}', content)
+    else:
+        # Add URL to frontmatter (before closing ---)
+        content = content.replace("\n---\n", f"\nmicropub_url: {url}\n---\n", 1)
+
+    filepath.write_text(content)
 
 
 def create_or_update_post(target_date, bookmarks):
@@ -260,7 +277,7 @@ def get_post_filepath(target_date):
 
 
 def publish_to_microblog(filepath, target_date):
-    """Publish a clippings post to Micro.blog via Micropub."""
+    """Publish or update a clippings post to Micro.blog via Micropub."""
     if not filepath.exists():
         print(f"Error: No local draft found at {filepath}")
         print("Run without --publish first to create a draft.")
@@ -276,43 +293,72 @@ def publish_to_microblog(filepath, target_date):
         sys.exit(1)
 
     title = frontmatter.get("title", f"Clippings for {target_date.strftime('%B %-d, %Y')}")
+    existing_url = frontmatter.get("micropub_url")
 
     # Prepare Micropub request
     headers = {
         "Authorization": f"Bearer {token}",
     }
 
-    # Use form-encoded data for Micropub
-    data = {
-        "h": "entry",
-        "name": title,
-        "content": body,
-        "published": target_date.strftime("%Y-%m-%dT12:00:00"),
-        "category": "clippings",
-    }
+    if existing_url:
+        # Update existing post
+        print(f"Updating existing post on Micro.blog...")
+        print(f"  URL: {existing_url}")
+        print(f"  Links: {len(links)}")
 
-    print(f"Publishing to Micro.blog...")
-    print(f"  Title: {title}")
-    print(f"  Date: {target_date.strftime('%Y-%m-%d')}")
-    print(f"  Links: {len(links)}")
+        # Micropub update uses JSON format
+        headers["Content-Type"] = "application/json"
+        import json
+        data = json.dumps({
+            "action": "update",
+            "url": existing_url,
+            "replace": {
+                "content": [body],
+                "name": [title],
+            }
+        })
 
-    response = requests.post(MICROPUB_ENDPOINT, headers=headers, data=data)
+        response = requests.post(MICROPUB_ENDPOINT, headers=headers, data=data)
 
-    if response.status_code in (201, 202):
-        location = response.headers.get("Location", "")
-        print(f"\nPublished successfully!")
-        if location:
-            print(f"  URL: {location}")
-
-        # Optionally delete local draft after publishing
-        # filepath.unlink()
-        # print(f"  Local draft removed.")
-
-        return True
+        if response.status_code in (200, 204):
+            print(f"\nUpdated successfully!")
+            return True
+        else:
+            print(f"\nError updating: {response.status_code}")
+            print(response.text)
+            return False
     else:
-        print(f"\nError publishing: {response.status_code}")
-        print(response.text)
-        return False
+        # Create new post
+        print(f"Publishing new post to Micro.blog...")
+        print(f"  Title: {title}")
+        print(f"  Date: {target_date.strftime('%Y-%m-%d')}")
+        print(f"  Links: {len(links)}")
+
+        # Use form-encoded data for Micropub create
+        data = {
+            "h": "entry",
+            "name": title,
+            "content": body,
+            "published": target_date.strftime("%Y-%m-%dT12:00:00"),
+            "category": "clippings",
+        }
+
+        response = requests.post(MICROPUB_ENDPOINT, headers=headers, data=data)
+
+        if response.status_code in (201, 202):
+            location = response.headers.get("Location", "")
+            print(f"\nPublished successfully!")
+            if location:
+                print(f"  URL: {location}")
+                # Save the URL to frontmatter for future updates
+                save_micropub_url(filepath, location)
+                print(f"  Saved URL to frontmatter for future updates")
+
+            return True
+        else:
+            print(f"\nError publishing: {response.status_code}")
+            print(response.text)
+            return False
 
 
 def open_in_editor(filepath):
