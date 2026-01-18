@@ -124,6 +124,7 @@ def fetch_bookmarks(token, collection_id, target_date):
                     "url": item.get("link", ""),
                     "excerpt": item.get("excerpt", ""),
                     "note": item.get("note", ""),
+                    "highlights": item.get("highlights", []),
                     "created": created,
                 })
 
@@ -181,6 +182,7 @@ def format_bookmark(bookmark):
     url = bookmark["url"]
     excerpt = bookmark.get("excerpt", "").strip()
     note = bookmark.get("note", "").strip()
+    highlights = bookmark.get("highlights", [])
 
     # Build the list item
     line = f'- [{title}]({url})'
@@ -193,6 +195,19 @@ def format_bookmark(bookmark):
         # Clean up excerpt - remove excessive whitespace
         excerpt = " ".join(excerpt.split())
         line += f'\n\n    {excerpt}'
+
+    # Add highlights as blockquotes if present
+    if highlights:
+        for hl in highlights:
+            hl_text = hl.get("text", "").strip()
+            if hl_text:
+                # Clean up and format as blockquote
+                hl_text = " ".join(hl_text.split())
+                line += f'\n\n    > {hl_text}'
+                # Add highlight note if present
+                hl_note = hl.get("note", "").strip()
+                if hl_note:
+                    line += f'\n    >\n    > — *{hl_note}*'
 
     return line
 
