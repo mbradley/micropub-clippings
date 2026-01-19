@@ -111,8 +111,9 @@ Running multiple times pulls fresh data from Raindrop, so notes and highlights a
 - **Highlights**: Highlights are included as blockquotes
 - **Update support**: First publish saves URL; subsequent publishes update the existing post
 - **Timezone handling**: UTC timestamps converted to local time
-- **Predictable URLs**: Posts use `{category}-YYYY-MM-DD` slug
+- **Predictable URLs**: Posts use `{category}-YYYY-MM-DD` slug (or just date if no category)
 - **Configurable**: Collection, tag, category, and output directory customizable via environment
+- **Optional categories**: Category in frontmatter and Micropub is optional—omit for no category
 
 ## Configuration
 
@@ -129,8 +130,10 @@ Optional overrides:
 ```
 RAINDROP_COLLECTION=Clippings    # Raindrop collection name (default: Clippings)
 RAINDROP_TAG=mchn                # Tag to filter by (default: mchn)
-MICROBLOG_CATEGORY=clippings     # Category for published posts (default: clippings)
+MICROBLOG_CATEGORY=clippings     # Category for posts and slug prefix (omit for none)
 ```
+
+If `MICROBLOG_CATEGORY` is set, posts will include a `categories` field in frontmatter and the category will be sent to Micropub. The slug will be `{category}-YYYY-MM-DD`. If omitted, no category is used and the slug is just `YYYY-MM-DD`.
 
 ## Adapting for Other Services
 
