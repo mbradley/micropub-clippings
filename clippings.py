@@ -252,44 +252,33 @@ def save_micropub_url(filepath, url):
 
 
 def create_or_update_post(target_date, bookmarks):
-    """Create a new clippings post or update existing one."""
+    """Create or regenerate a clippings post with fresh data from Raindrop."""
     # Ensure content directory exists
     CONTENT_DIR.mkdir(parents=True, exist_ok=True)
 
     date_str = target_date.strftime("%Y-%m-%d")
     filepath = CONTENT_DIR / f"{date_str}.md"
 
-    # Parse existing post if any
-    _, existing_links, _ = parse_existing_post(filepath)
-
-    # Filter out bookmarks that already exist (by URL)
-    new_bookmarks = [b for b in bookmarks if b["url"] not in existing_links]
-
-    if not new_bookmarks and not existing_links:
+    if not bookmarks:
         print(f"No bookmarks found for {date_str} matching criteria.")
         print(f"  Collection: {COLLECTION_NAME}")
         print(f"  Tag: #{TAG_FILTER}")
         return None
 
-    if not new_bookmarks and existing_links:
-        print(f"No new bookmarks to add. Post already has {len(existing_links)} link(s).")
-        return filepath
-
-    # Build the post content
-    if existing_links:
-        # Append to existing - read current content and add new links
-        content = filepath.read_text().rstrip()
-        content += "\n"
-        for bookmark in new_bookmarks:
-            content += "\n" + format_bookmark(bookmark)
-        print(f"Adding {len(new_bookmarks)} new link(s) to existing post ({len(existing_links)} existing)")
+    # Preserve micropub_url if it exists
+    micropub_url = None
+    if filepath.exists():
+        frontmatter, existing_links, _ = parse_existing_post(filepath)
+        micropub_url = frontmatter.get("micropub_url")
+        print(f"Regenerating post with {len(bookmarks)} link(s) (was {len(existing_links)})")
     else:
-        # Create new post
-        content = generate_frontmatter(target_date)
-        content += "\n"
-        for bookmark in bookmarks:
-            content += "\n" + format_bookmark(bookmark)
         print(f"Creating new clippings post with {len(bookmarks)} link(s)")
+
+    # Always regenerate from fresh Raindrop data
+    content = generate_frontmatter(target_date, micropub_url)
+    content += "\n"
+    for bookmark in bookmarks:
+        content += "\n" + format_bookmark(bookmark)
 
     filepath.write_text(content + "\n")
     return filepath
