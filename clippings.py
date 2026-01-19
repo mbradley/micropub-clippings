@@ -28,13 +28,18 @@ MICROPUB_ENDPOINT = "https://micro.blog/micropub"
 
 def get_config():
     """Get configuration from environment variables with defaults."""
-    # Default content dir is ./content/clippings relative to current working directory
-    default_content_dir = Path.cwd() / "content" / "clippings"
+    content_dir = os.getenv("CONTENT_DIR")
+    if not content_dir:
+        print("Error: CONTENT_DIR not set.")
+        print("Add to your .env file, e.g.:")
+        print("  CONTENT_DIR=/path/to/your/site/content/clippings")
+        sys.exit(1)
+
     return {
         "collection_name": os.getenv("RAINDROP_COLLECTION", "Clippings"),
         "tag_filter": os.getenv("RAINDROP_TAG", "mchn"),
         "post_category": os.getenv("MICROBLOG_CATEGORY", "clippings"),
-        "content_dir": Path(os.getenv("CONTENT_DIR", default_content_dir)),
+        "content_dir": Path(content_dir),
     }
 
 

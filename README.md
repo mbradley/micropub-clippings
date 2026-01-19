@@ -42,8 +42,11 @@ mkdir -p ~/.config/micropub-clippings
 cat > ~/.config/micropub-clippings/.env << 'EOF'
 RAINDROP_API_TOKEN=your_raindrop_token
 MICROBLOG_TOKEN=your_microblog_token
+CONTENT_DIR=/path/to/your/content/clippings
 EOF
 ```
+
+`CONTENT_DIR` is required - this is where draft files are created. Use an absolute path.
 
 **Raindrop token**: https://app.raindrop.io/settings/integrations → Create app → Create test token
 
@@ -113,16 +116,21 @@ Running multiple times pulls fresh data from Raindrop, so notes and highlights a
 
 ## Configuration
 
-Add optional settings to your `.env` file to customize behavior:
+Required in `.env`:
+
+```
+RAINDROP_API_TOKEN=...                      # Raindrop API token
+MICROBLOG_TOKEN=...                         # Micro.blog app token
+CONTENT_DIR=/path/to/content/clippings      # Output directory (absolute path)
+```
+
+Optional overrides:
 
 ```
 RAINDROP_COLLECTION=Clippings    # Raindrop collection name (default: Clippings)
 RAINDROP_TAG=mchn                # Tag to filter by (default: mchn)
 MICROBLOG_CATEGORY=clippings     # Category for published posts (default: clippings)
-CONTENT_DIR=../content/clippings # Local output directory
 ```
-
-All settings have sensible defaults and are optional.
 
 ## Adapting for Other Services
 
