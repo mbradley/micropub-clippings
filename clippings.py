@@ -113,11 +113,19 @@ def fetch_bookmarks(token, collection_id, target_date):
     target_date_str = target_date.strftime("%Y-%m-%d")
 
     for item in data.get("items", []):
-        # Parse the created date
+        # Parse the created date - Raindrop returns UTC timestamps
         created = item.get("created", "")
         if created:
             # Raindrop returns ISO format: 2026-01-17T10:30:00.000Z
-            item_date = created[:10]  # Extract YYYY-MM-DD
+            # Convert UTC to local time for date comparison
+            try:
+                utc_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                local_dt = utc_dt.astimezone()  # Convert to local timezone
+                item_date = local_dt.strftime("%Y-%m-%d")
+            except (ValueError, AttributeError):
+                # Fallback to simple string extraction if parsing fails
+                item_date = created[:10]
+
             if item_date == target_date_str:
                 bookmarks.append({
                     "title": item.get("title", "Untitled"),
