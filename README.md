@@ -38,8 +38,10 @@ MICROBLOG_TOKEN=your_microblog_token
 
 ### 3. Raindrop setup
 
-- Create a collection called "Clippings"
-- Tag bookmarks you want to publish with `#mchn`
+- Create a collection (default name: "Clippings")
+- Tag bookmarks you want to publish (default tag: `#mchn`)
+
+These defaults can be changed via environment variables (see Configuration below).
 
 ## Usage
 
@@ -66,7 +68,7 @@ MICROBLOG_TOKEN=your_microblog_token
 ## Workflow
 
 1. Save bookmarks to Raindrop throughout the day
-2. Add them to "Clippings" collection with `#mchn` tag
+2. Add them to your configured collection with the configured tag
 3. Add notes and highlights in Raindrop as desired
 4. Run `./clippings` to generate local draft
 5. Preview locally, make any edits
@@ -93,7 +95,8 @@ Running multiple times pulls fresh data from Raindrop, so notes and highlights a
 - **Highlights**: Highlights are included as blockquotes
 - **Update support**: First publish saves URL; subsequent publishes update the existing post
 - **Timezone handling**: UTC timestamps converted to local time
-- **Predictable URLs**: Posts use `clippings-YYYY-MM-DD` slug
+- **Predictable URLs**: Posts use `{category}-YYYY-MM-DD` slug
+- **Configurable**: Collection, tag, category, and output directory customizable via environment
 
 ## Configuration
 
