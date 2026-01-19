@@ -251,7 +251,7 @@ def generate_frontmatter(target_date, micropub_url=None):
     fm = f"""---
 title: "Clippings for {title_date}"
 date: {date_str}
-type: clippings"""
+type: post"""
     if micropub_url:
         fm += f"\nmicropub_url: {micropub_url}"
     fm += "\n---"
