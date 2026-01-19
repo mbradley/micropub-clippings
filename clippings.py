@@ -195,14 +195,16 @@ def format_bookmark(bookmark):
     # Build the list item
     line = f'- [{title}]({url})'
 
-    # Note from user goes inline (placeholder for manual editing)
-    # We don't add Raindrop notes automatically - those are private
-
     # Add excerpt as indented paragraph if present
     if excerpt:
         # Clean up excerpt - remove excessive whitespace
         excerpt = " ".join(excerpt.split())
         line += f'\n\n    {excerpt}'
+
+    # Add user's note on the link if present
+    if note:
+        note = " ".join(note.split())
+        line += f'\n\n    *{note}*'
 
     # Add highlights as blockquotes if present
     if highlights:
