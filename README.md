@@ -97,12 +97,16 @@ Running multiple times pulls fresh data from Raindrop, so notes and highlights a
 
 ## Configuration
 
-Edit these constants in `clippings.py` to customize:
+Add optional settings to your `.env` file to customize behavior:
 
-```python
-COLLECTION_NAME = "Clippings"  # Raindrop collection name
-TAG_FILTER = "mchn"            # Tag to filter by
 ```
+RAINDROP_COLLECTION=Clippings    # Raindrop collection name (default: Clippings)
+RAINDROP_TAG=mchn                # Tag to filter by (default: mchn)
+MICROBLOG_CATEGORY=clippings     # Category for published posts (default: clippings)
+CONTENT_DIR=../content/clippings # Local output directory
+```
+
+All settings have sensible defaults and are optional.
 
 ## License
 

@@ -30,12 +30,19 @@ except ImportError:
     print("Error: 'python-dotenv' package required. Install with: pip install python-dotenv")
     sys.exit(1)
 
-# Configuration
+# Configuration - defaults can be overridden via environment variables
 RAINDROP_API_BASE = "https://api.raindrop.io/rest/v1"
 MICROPUB_ENDPOINT = "https://micro.blog/micropub"
-COLLECTION_NAME = "Clippings"
-TAG_FILTER = "mchn"
-CONTENT_DIR = Path(__file__).parent.parent / "content" / "clippings"
+
+
+def get_config():
+    """Get configuration from environment variables with defaults."""
+    return {
+        "collection_name": os.getenv("RAINDROP_COLLECTION", "Clippings"),
+        "tag_filter": os.getenv("RAINDROP_TAG", "mchn"),
+        "post_category": os.getenv("MICROBLOG_CATEGORY", "clippings"),
+        "content_dir": Path(os.getenv("CONTENT_DIR", Path(__file__).parent.parent / "content" / "clippings")),
+    }
 
 
 def load_env():
@@ -97,12 +104,12 @@ def get_collection_id(token, collection_name):
     sys.exit(1)
 
 
-def fetch_bookmarks(token, collection_id, target_date):
+def fetch_bookmarks(token, collection_id, target_date, tag_filter):
     """Fetch bookmarks from collection with tag filter for a specific date."""
     # Raindrop search with tag filter
     # Date filtering is done client-side since API search is limited
     params = {
-        "search": f"#{TAG_FILTER}",
+        "search": f"#{tag_filter}",
         "perpage": 50,
         "page": 0,
     }
@@ -251,18 +258,19 @@ def save_micropub_url(filepath, url):
     filepath.write_text(content)
 
 
-def create_or_update_post(target_date, bookmarks):
+def create_or_update_post(target_date, bookmarks, config):
     """Create or regenerate a clippings post with fresh data from Raindrop."""
+    content_dir = config["content_dir"]
     # Ensure content directory exists
-    CONTENT_DIR.mkdir(parents=True, exist_ok=True)
+    content_dir.mkdir(parents=True, exist_ok=True)
 
     date_str = target_date.strftime("%Y-%m-%d")
-    filepath = CONTENT_DIR / f"{date_str}.md"
+    filepath = content_dir / f"{date_str}.md"
 
     if not bookmarks:
         print(f"No bookmarks found for {date_str} matching criteria.")
-        print(f"  Collection: {COLLECTION_NAME}")
-        print(f"  Tag: #{TAG_FILTER}")
+        print(f"  Collection: {config['collection_name']}")
+        print(f"  Tag: #{config['tag_filter']}")
         return None
 
     # Preserve micropub_url if it exists
@@ -284,13 +292,13 @@ def create_or_update_post(target_date, bookmarks):
     return filepath
 
 
-def get_post_filepath(target_date):
+def get_post_filepath(target_date, content_dir):
     """Get the filepath for a clippings post."""
     date_str = target_date.strftime("%Y-%m-%d")
-    return CONTENT_DIR / f"{date_str}.md"
+    return content_dir / f"{date_str}.md"
 
 
-def publish_to_microblog(filepath, target_date):
+def publish_to_microblog(filepath, target_date, post_category):
     """Publish or update a clippings post to Micro.blog via Micropub."""
     if not filepath.exists():
         print(f"Error: No local draft found at {filepath}")
@@ -349,13 +357,13 @@ def publish_to_microblog(filepath, target_date):
         print(f"  Links: {len(links)}")
 
         # Use form-encoded data for Micropub create
-        slug = f"clippings-{target_date.strftime('%Y-%m-%d')}"
+        slug = f"{post_category}-{target_date.strftime('%Y-%m-%d')}"
         data = {
             "h": "entry",
             "name": title,
             "content": body,
             "published": target_date.strftime("%Y-%m-%dT12:00:00"),
-            "category": "clippings",
+            "category": post_category,
             "mp-slug": slug,
         }
 
@@ -427,6 +435,9 @@ Examples:
     # Load environment
     load_env()
 
+    # Get configuration
+    config = get_config()
+
     # Parse target date
     if args.date:
         try:
@@ -439,8 +450,8 @@ Examples:
 
     # Publish mode
     if args.publish:
-        filepath = get_post_filepath(target_date)
-        publish_to_microblog(filepath, target_date)
+        filepath = get_post_filepath(target_date, config["content_dir"])
+        publish_to_microblog(filepath, target_date, config["post_category"])
         return
 
     # Draft mode - fetch from Raindrop and create/update local file
@@ -450,13 +461,13 @@ Examples:
     token = get_raindrop_token()
 
     # Find collection
-    collection_id = get_collection_id(token, COLLECTION_NAME)
+    collection_id = get_collection_id(token, config["collection_name"])
 
     # Fetch bookmarks
-    bookmarks = fetch_bookmarks(token, collection_id, target_date)
+    bookmarks = fetch_bookmarks(token, collection_id, target_date, config["tag_filter"])
 
     # Create or update post
-    filepath = create_or_update_post(target_date, bookmarks)
+    filepath = create_or_update_post(target_date, bookmarks, config)
 
     if filepath and not args.no_edit:
         open_in_editor(filepath)
