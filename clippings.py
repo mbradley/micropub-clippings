@@ -18,17 +18,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
-try:
-    import requests
-except ImportError:
-    print("Error: 'requests' package required. Install with: pip install requests")
-    sys.exit(1)
-
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    print("Error: 'python-dotenv' package required. Install with: pip install python-dotenv")
-    sys.exit(1)
+import requests
+from dotenv import load_dotenv
 
 # Configuration - defaults can be overridden via environment variables
 RAINDROP_API_BASE = "https://api.raindrop.io/rest/v1"
@@ -37,22 +28,40 @@ MICROPUB_ENDPOINT = "https://micro.blog/micropub"
 
 def get_config():
     """Get configuration from environment variables with defaults."""
+    # Default content dir is ./content/clippings relative to current working directory
+    default_content_dir = Path.cwd() / "content" / "clippings"
     return {
         "collection_name": os.getenv("RAINDROP_COLLECTION", "Clippings"),
         "tag_filter": os.getenv("RAINDROP_TAG", "mchn"),
         "post_category": os.getenv("MICROBLOG_CATEGORY", "clippings"),
-        "content_dir": Path(os.getenv("CONTENT_DIR", Path(__file__).parent.parent / "content" / "clippings")),
+        "content_dir": Path(os.getenv("CONTENT_DIR", default_content_dir)),
     }
 
 
 def load_env():
-    """Load environment variables from .env file."""
-    env_path = Path(__file__).parent / ".env"
-    if not env_path.exists():
-        print(f"Error: {env_path} not found.")
-        print("Copy .env.example to .env and fill in your tokens.")
-        sys.exit(1)
-    load_dotenv(env_path)
+    """Load environment variables from .env file.
+
+    Searches in order:
+    1. ./.env (current directory)
+    2. ~/.config/micropub-clippings/.env
+    3. Script directory (for development)
+    """
+    search_paths = [
+        Path.cwd() / ".env",
+        Path.home() / ".config" / "micropub-clippings" / ".env",
+        Path(__file__).parent / ".env",
+    ]
+
+    for env_path in search_paths:
+        if env_path.exists():
+            load_dotenv(env_path)
+            return
+
+    print("Error: No .env file found. Searched:")
+    for p in search_paths:
+        print(f"  - {p}")
+    print("\nCreate one with your API tokens. See README for details.")
+    sys.exit(1)
 
 
 def get_raindrop_token():

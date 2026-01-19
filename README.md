@@ -6,37 +6,50 @@ Publish curated bookmarks from Raindrop.io to Micro.blog.
 
 This script fetches bookmarks from a Raindrop.io collection, formats them as markdown with excerpts, notes, and highlights, and publishes them to Micro.blog via Micropub.
 
-## Setup
+## Installation
 
-### 1. Install dependencies
+### Option A: pipx (recommended)
 
 ```bash
-cd scripts
+pipx install git+https://github.com/mbradley/micropub-clippings.git
+```
+
+This installs a global `clippings` command.
+
+### Option B: Clone and run directly
+
+```bash
+git clone https://github.com/mbradley/micropub-clippings.git
+cd micropub-clippings
 python3 -m venv .venv
 source .venv/bin/activate
-pip install requests python-dotenv
+pip install -e .
 ```
 
-### 2. Configure API tokens
+## Setup
 
-Copy the example config and add your tokens:
+### 1. Configure API tokens
+
+Create a `.env` file with your tokens. The script searches these locations (in order):
+
+1. `./.env` (current directory)
+2. `~/.config/micropub-clippings/.env`
+3. Script directory (for development)
 
 ```bash
-cp .env.example .env
-```
-
-Edit `.env`:
-
-```
+# For global config:
+mkdir -p ~/.config/micropub-clippings
+cat > ~/.config/micropub-clippings/.env << 'EOF'
 RAINDROP_API_TOKEN=your_raindrop_token
 MICROBLOG_TOKEN=your_microblog_token
+EOF
 ```
 
 **Raindrop token**: https://app.raindrop.io/settings/integrations → Create app → Create test token
 
 **Micro.blog token**: https://micro.blog/account/apps → Generate Token
 
-### 3. Raindrop setup
+### 2. Raindrop setup
 
 - Create a collection (default name: "Clippings")
 - Tag bookmarks you want to publish (default tag: `#mchn`)
