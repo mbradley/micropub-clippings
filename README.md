@@ -111,6 +111,68 @@ CONTENT_DIR=../content/clippings # Local output directory
 
 All settings have sensible defaults and are optional.
 
+## Adapting for Other Services
+
+The script is structured around two main interfaces. To adapt for a different bookmark service or publishing platform, implement these patterns:
+
+### Bookmark Structure
+
+The `fetch_bookmarks()` function returns a list of bookmark dicts:
+
+```python
+{
+    "title": "Article Title",
+    "url": "https://example.com/article",
+    "excerpt": "Description or excerpt from the page",  # optional
+    "note": "Your note on the bookmark",              # optional
+    "highlights": [                                   # optional
+        {
+            "text": "Highlighted passage",
+            "note": "Note on this highlight"          # optional
+        }
+    ],
+    "created": "2026-01-15T10:30:00.000Z"            # ISO 8601 UTC
+}
+```
+
+To use a different bookmark service (Pinboard, Pocket, etc.), write a new fetcher that returns this structure. Missing fields are handled gracefully.
+
+### Publishing Interface
+
+The `publish_to_microblog()` function expects:
+
+- **Input**: Markdown body content, title, target date, category
+- **Output**: Published URL (stored in frontmatter for updates)
+
+It uses [Micropub](https://micropub.spec.indieweb.org/), a W3C standard supported by Micro.blog, WordPress (with plugin), and other IndieWeb platforms.
+
+To use a different publishing platform, replace this function with one that:
+1. Creates a new post and returns its URL
+2. Updates an existing post given its URL
+
+### Local Draft Structure
+
+Drafts are markdown files with YAML frontmatter:
+
+```markdown
+---
+title: "Clippings for January 15, 2026"
+date: 2026-01-15
+type: clippings
+micropub_url: https://example.com/published/url  # added after first publish
+---
+
+- [Article Title](https://example.com)
+
+    Excerpt text.
+
+    *Your note*
+
+    > Highlighted passage
+```
+
+The `micropub_url` field enables update-in-place rather than creating duplicates.
+
 ## License
 
 MIT
