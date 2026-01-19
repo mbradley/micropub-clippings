@@ -358,12 +358,14 @@ def publish_to_microblog(filepath, target_date):
         print(f"  Links: {len(links)}")
 
         # Use form-encoded data for Micropub create
+        slug = f"clippings-{target_date.strftime('%Y-%m-%d')}"
         data = {
             "h": "entry",
             "name": title,
             "content": body,
             "published": target_date.strftime("%Y-%m-%dT12:00:00"),
             "category": "clippings",
+            "mp-slug": slug,
         }
 
         response = requests.post(MICROPUB_ENDPOINT, headers=headers, data=data)
