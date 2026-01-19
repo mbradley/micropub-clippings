@@ -38,7 +38,7 @@ def get_config():
     return {
         "collection_name": os.getenv("RAINDROP_COLLECTION", "Clippings"),
         "tag_filter": os.getenv("RAINDROP_TAG", "mchn"),
-        "post_category": os.getenv("MICROBLOG_CATEGORY", "clippings"),
+        "post_category": os.getenv("MICROBLOG_CATEGORY", ""),  # Empty = no category
         "content_dir": Path(content_dir),
     }
 
@@ -243,7 +243,7 @@ def format_bookmark(bookmark):
     return line
 
 
-def generate_frontmatter(target_date, micropub_url=None):
+def generate_frontmatter(target_date, micropub_url=None, category=None):
     """Generate YAML frontmatter for a clippings post."""
     date_str = target_date.strftime("%Y-%m-%d")
     title_date = target_date.strftime("%B %-d, %Y")
@@ -252,6 +252,8 @@ def generate_frontmatter(target_date, micropub_url=None):
 title: "Clippings for {title_date}"
 date: {date_str}
 type: post"""
+    if category:
+        fm += f'\ncategories:\n- "{category}"'
     if micropub_url:
         fm += f"\nmicropub_url: {micropub_url}"
     fm += "\n---"
@@ -297,7 +299,7 @@ def create_or_update_post(target_date, bookmarks, config):
         print(f"Creating new clippings post with {len(bookmarks)} link(s)")
 
     # Always regenerate from fresh Raindrop data
-    content = generate_frontmatter(target_date, micropub_url)
+    content = generate_frontmatter(target_date, micropub_url, config.get("post_category"))
     content += "\n"
     for bookmark in bookmarks:
         content += "\n" + format_bookmark(bookmark)
@@ -371,15 +373,17 @@ def publish_to_microblog(filepath, target_date, post_category):
         print(f"  Links: {len(links)}")
 
         # Use form-encoded data for Micropub create
-        slug = f"{post_category}-{target_date.strftime('%Y-%m-%d')}"
+        date_slug = target_date.strftime('%Y-%m-%d')
+        slug = f"{post_category}-{date_slug}" if post_category else date_slug
         data = {
             "h": "entry",
             "name": title,
             "content": body,
             "published": target_date.strftime("%Y-%m-%dT12:00:00"),
-            "category": post_category,
             "mp-slug": slug,
         }
+        if post_category:
+            data["category"] = post_category
 
         response = requests.post(MICROPUB_ENDPOINT, headers=headers, data=data)
 
