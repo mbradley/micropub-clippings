@@ -374,7 +374,7 @@ def publish_to_microblog(filepath, target_date, post_category):
 
         # Use form-encoded data for Micropub create
         date_slug = target_date.strftime('%Y-%m-%d')
-        slug = f"{post_category}-{date_slug}" if post_category else date_slug
+        slug = f"{post_category.lower()}-{date_slug}" if post_category else date_slug
         data = {
             "h": "entry",
             "name": title,
