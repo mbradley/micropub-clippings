@@ -60,7 +60,7 @@ def load_env():
 
     for env_path in search_paths:
         if env_path.exists():
-            load_dotenv(env_path)
+            load_dotenv(env_path, override=True)
             return
 
     print("Error: No .env file found. Searched:")
