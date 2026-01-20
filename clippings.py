@@ -12,6 +12,7 @@ Usage:
 import argparse
 import os
 import re
+import shlex
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -404,7 +405,11 @@ def publish_to_microblog(filepath, target_date, post_category):
 
 
 def open_in_editor(filepath):
-    """Open file in user's preferred editor."""
+    """Open file in user's preferred editor.
+
+    Uses $EDITOR environment variable if set. Supports commands with arguments
+    (e.g., "bbedit -w" or "code --wait"). Falls back to trying common editors.
+    """
     editor = os.environ.get("EDITOR", "")
 
     if not editor:
@@ -415,7 +420,9 @@ def open_in_editor(filepath):
                 break
 
     if editor:
-        subprocess.run([editor, str(filepath)])
+        # Parse editor command to support arguments (e.g., "bbedit -w")
+        cmd = shlex.split(editor) + [str(filepath)]
+        subprocess.run(cmd)
     else:
         print(f"Created: {filepath}")
         print("Set $EDITOR to open automatically")

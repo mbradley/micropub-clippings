@@ -135,6 +135,23 @@ MICROBLOG_CATEGORY=clippings     # Category for posts and slug prefix (omit for 
 
 If `MICROBLOG_CATEGORY` is set, posts will include a `categories` field in frontmatter and the category will be sent to Micropub. The slug will be `{category}-YYYY-MM-DD`. If omitted, no category is used and the slug is just `YYYY-MM-DD`.
 
+### Editor
+
+After creating or updating a draft, the script opens it in your editor. Set the `EDITOR` environment variable to customize:
+
+```bash
+# In your shell profile (~/.zshrc, ~/.bashrc, etc.):
+export EDITOR="vim"           # Terminal editor
+export EDITOR="code --wait"   # VS Code (waits for file to close)
+export EDITOR="subl -w"       # Sublime Text (waits)
+export EDITOR="bbedit -w"     # BBEdit on macOS (waits)
+export EDITOR="bbedit"        # BBEdit (returns immediately)
+```
+
+If `EDITOR` is not set, the script tries these in order: `code`, `subl`, `vim`, `nano`.
+
+Use `--no-edit` to skip opening the editor entirely.
+
 ## Adapting for Other Services
 
 The script is structured around two main interfaces. To adapt for a different bookmark service or publishing platform, implement these patterns:
