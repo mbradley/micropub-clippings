@@ -131,6 +131,7 @@ Optional overrides:
 RAINDROP_COLLECTION=Clippings    # Raindrop collection name (default: Clippings)
 RAINDROP_TAG=mchn                # Tag to filter by (default: mchn)
 MICROBLOG_CATEGORY=clippings     # Category for posts and slug prefix (omit for none)
+PUBLISH_TIME=23:59               # Time for published posts in HH:MM (default: 23:59)
 ```
 
 If `MICROBLOG_CATEGORY` is set, posts will include a `categories` field in frontmatter and the category will be sent to Micropub. The slug will be `{category}-YYYY-MM-DD`. If omitted, no category is used and the slug is just `YYYY-MM-DD`.

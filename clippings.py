@@ -41,6 +41,7 @@ def get_config():
         "tag_filter": os.getenv("RAINDROP_TAG", "mchn"),
         "post_category": os.getenv("MICROBLOG_CATEGORY", ""),  # Empty = no category
         "content_dir": Path(content_dir),
+        "publish_time": os.getenv("PUBLISH_TIME", "23:59"),  # HH:MM format
     }
 
 
@@ -315,7 +316,7 @@ def get_post_filepath(target_date, content_dir):
     return content_dir / f"{date_str}.md"
 
 
-def publish_to_microblog(filepath, target_date, post_category):
+def publish_to_microblog(filepath, target_date, post_category, publish_time):
     """Publish or update a clippings post to Micro.blog via Micropub."""
     if not filepath.exists():
         print(f"Error: No local draft found at {filepath}")
@@ -380,7 +381,7 @@ def publish_to_microblog(filepath, target_date, post_category):
             "h": "entry",
             "name": title,
             "content": body,
-            "published": target_date.strftime("%Y-%m-%dT12:00:00"),
+            "published": f"{target_date.strftime('%Y-%m-%d')}T{publish_time}:00",
             "mp-slug": slug,
         }
         if post_category:
@@ -476,7 +477,7 @@ Examples:
     # Publish mode
     if args.publish:
         filepath = get_post_filepath(target_date, config["content_dir"])
-        publish_to_microblog(filepath, target_date, config["post_category"])
+        publish_to_microblog(filepath, target_date, config["post_category"], config["publish_time"])
         return
 
     # Draft mode - fetch from Raindrop and create/update local file
