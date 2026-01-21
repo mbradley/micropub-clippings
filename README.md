@@ -111,7 +111,7 @@ Running multiple times pulls fresh data from Raindrop, so notes and highlights a
 - **Highlights**: Highlights are included as blockquotes
 - **Update support**: First publish saves URL; subsequent publishes update the existing post
 - **Timezone handling**: UTC timestamps converted to local time
-- **Predictable URLs**: Posts use `{category}-YYYY-MM-DD` slug (or just date if no category)
+- **Slug**: Sends `{category}-YYYY-MM-DD` via `mp-slug` (note: [Micro.blog ignores mp-slug](https://help.micro.blog/t/supporting-mp-slug-summary-and-type-on-the-micropub-endpoint/2072))
 - **Configurable**: Collection, tag, category, and output directory customizable via environment
 - **Optional categories**: Category in frontmatter and Micropub is optional—omit for no category
 
