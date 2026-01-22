@@ -65,6 +65,9 @@ These defaults can be changed via environment variables (see Configuration below
 # Create/update local draft for today
 ./clippings
 
+# Collect last 3 days into today's post (catch up after missing days)
+./clippings --last 3
+
 # Create draft for a specific date (backfill)
 ./clippings --date 2026-01-15
 
@@ -107,12 +110,13 @@ Running multiple times pulls fresh data from Raindrop, so notes and highlights a
 ## Features
 
 - **Fresh data**: Each run regenerates from current Raindrop data
+- **Catch-up mode**: Use `--last N` to collect multiple days into one post
 - **Link notes**: Notes on bookmarks appear as italicized text
 - **Highlights**: Highlights are included as blockquotes
 - **Update support**: First publish saves URL; subsequent publishes update the existing post
 - **Timezone handling**: UTC timestamps converted to local time
 - **Slug**: Sends `{category}-YYYY-MM-DD` via `mp-slug` (note: [Micro.blog ignores mp-slug](https://help.micro.blog/t/supporting-mp-slug-summary-and-type-on-the-micropub-endpoint/2072))
-- **Configurable**: Collection, tag, category, and output directory customizable via environment
+- **Configurable**: Collection, tag, category, publish time, and output directory customizable via environment
 - **Optional categories**: Category in frontmatter and Micropub is optional—omit for no category
 
 ## Configuration

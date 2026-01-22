@@ -4,6 +4,7 @@ Fetch bookmarks from Raindrop.io and create/update clippings posts.
 
 Usage:
     ./scripts/clippings              # Today's clippings (creates local draft)
+    ./scripts/clippings --last 3     # Collect last 3 days into today's post
     ./scripts/clippings --date 2026-01-15  # Specific date (backfill)
     ./scripts/clippings --publish    # Publish today's clippings to Micro.blog
     ./scripts/clippings --publish --date 2026-01-15  # Publish backdated
@@ -15,7 +16,7 @@ import re
 import shlex
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -120,8 +121,12 @@ def get_collection_id(token, collection_name):
     sys.exit(1)
 
 
-def fetch_bookmarks(token, collection_id, target_date, tag_filter):
-    """Fetch bookmarks from collection with tag filter for a specific date."""
+def fetch_bookmarks(token, collection_id, target_dates, tag_filter):
+    """Fetch bookmarks from collection with tag filter for specified dates.
+
+    Args:
+        target_dates: List of date strings in YYYY-MM-DD format
+    """
     # Raindrop search with tag filter
     # Date filtering is done client-side since API search is limited
     params = {
@@ -133,7 +138,7 @@ def fetch_bookmarks(token, collection_id, target_date, tag_filter):
     data = raindrop_request(f"/raindrops/{collection_id}", token, params)
     bookmarks = []
 
-    target_date_str = target_date.strftime("%Y-%m-%d")
+    target_date_set = set(target_dates)
 
     for item in data.get("items", []):
         # Parse the created date - Raindrop returns UTC timestamps
@@ -149,7 +154,7 @@ def fetch_bookmarks(token, collection_id, target_date, tag_filter):
                 # Fallback to simple string extraction if parsing fails
                 item_date = created[:10]
 
-            if item_date == target_date_str:
+            if item_date in target_date_set:
                 bookmarks.append({
                     "title": item.get("title", "Untitled"),
                     "url": item.get("link", ""),
@@ -436,6 +441,7 @@ def main():
         epilog="""
 Examples:
   ./scripts/clippings                    # Create local draft for today
+  ./scripts/clippings --last 3           # Collect last 3 days into today's post
   ./scripts/clippings --date 2026-01-15  # Create draft for specific date
   ./scripts/clippings --publish          # Publish today's draft to Micro.blog
   ./scripts/clippings --publish -d 2026-01-15  # Publish backdated
@@ -445,6 +451,12 @@ Examples:
         "--date", "-d",
         type=str,
         help="Date for clippings (YYYY-MM-DD format, default: today)"
+    )
+    parser.add_argument(
+        "--last", "-l",
+        type=int,
+        metavar="N",
+        help="Collect links from the last N days (includes today)"
     )
     parser.add_argument(
         "--no-edit",
@@ -464,15 +476,31 @@ Examples:
     # Get configuration
     config = get_config()
 
-    # Parse target date
-    if args.date:
+    # Parse target date and collection dates
+    if args.last and args.date:
+        print("Error: --last and --date cannot be used together")
+        sys.exit(1)
+
+    if args.last:
+        if args.last < 1:
+            print("Error: --last must be at least 1")
+            sys.exit(1)
+        # Post dated today, collect last N days
+        target_date = datetime.now()
+        collect_dates = [
+            (target_date - timedelta(days=i)).strftime("%Y-%m-%d")
+            for i in range(args.last)
+        ]
+    elif args.date:
         try:
             target_date = datetime.strptime(args.date, "%Y-%m-%d")
         except ValueError:
             print(f"Error: Invalid date format '{args.date}'. Use YYYY-MM-DD")
             sys.exit(1)
+        collect_dates = [target_date.strftime("%Y-%m-%d")]
     else:
         target_date = datetime.now()
+        collect_dates = [target_date.strftime("%Y-%m-%d")]
 
     # Publish mode
     if args.publish:
@@ -481,7 +509,10 @@ Examples:
         return
 
     # Draft mode - fetch from Raindrop and create/update local file
-    print(f"Fetching clippings for {target_date.strftime('%Y-%m-%d')}...")
+    if len(collect_dates) > 1:
+        print(f"Fetching clippings from {collect_dates[-1]} to {collect_dates[0]}...")
+    else:
+        print(f"Fetching clippings for {collect_dates[0]}...")
 
     # Get Raindrop token
     token = get_raindrop_token()
@@ -490,7 +521,7 @@ Examples:
     collection_id = get_collection_id(token, config["collection_name"])
 
     # Fetch bookmarks
-    bookmarks = fetch_bookmarks(token, collection_id, target_date, config["tag_filter"])
+    bookmarks = fetch_bookmarks(token, collection_id, collect_dates, config["tag_filter"])
 
     # Create or update post
     filepath = create_or_update_post(target_date, bookmarks, config)
